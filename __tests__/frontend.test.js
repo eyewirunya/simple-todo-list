@@ -79,6 +79,7 @@ describe('Frontend Todo Application', () => {
             onchange="toggleTodo(${todo.id})"
           />
           <span class="todo-text">${escapeHtml(todo.text)}</span>
+          <button class="edit-btn" onclick="editTodo(${todo.id})">Edit</button>
           <button class="delete-btn" onclick="deleteTodo(${todo.id})">Delete</button>
         </div>
       `).join('');
@@ -86,6 +87,7 @@ describe('Frontend Todo Application', () => {
       expect(todoList.children.length).toBe(2);
       expect(todoList.innerHTML).toContain('Test todo');
       expect(todoList.innerHTML).toContain('Completed todo');
+      expect(todoList.innerHTML).toContain('Edit');
     });
   });
 
@@ -242,6 +244,43 @@ describe('Frontend Todo Application', () => {
 
       const response = await fetch('/api/todos/1', {
         method: 'PUT',
+      });
+
+      if (!response.ok) {
+        alert('Failed to update todo');
+      }
+
+      expect(alert).toHaveBeenCalledWith('Failed to update todo');
+    });
+  });
+
+  describe('editTodo function', () => {
+    test('should send PUT request to update todo text', async () => {
+      const updatedTodo = { id: 1, text: 'Updated todo', completed: false };
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => updatedTodo
+      });
+
+      const response = await fetch('/api/todos/1', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: 'Updated todo' }),
+      });
+
+      expect(response.ok).toBe(true);
+      const result = await response.json();
+      expect(result.text).toBe('Updated todo');
+    });
+
+    test('should alert on failed update', async () => {
+      fetch.mockResolvedValueOnce({ ok: false });
+
+      const response = await fetch('/api/todos/1', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: 'Updated todo' }),
       });
 
       if (!response.ok) {

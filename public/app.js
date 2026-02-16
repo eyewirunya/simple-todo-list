@@ -111,6 +111,7 @@ function renderTodos() {
                     onchange="toggleTodo(${todo.id})"
                 />
                 <span class="todo-text">${escapeHtml(todo.text)}</span>
+                <button class="edit-btn" onclick="editTodo(${todo.id})">Edit</button>
                 <button class="delete-btn" onclick="deleteTodo(${todo.id})">Delete</button>
             </div>
         `).join('');
@@ -118,6 +119,45 @@ function renderTodos() {
     
     updateStats();
 }
+
+// Edit a todo's text (uses prompt for simplicity)
+async function editTodo(id) {
+    const todo = todos.find(t => t.id === id);
+    if (!todo) return;
+
+    const newText = prompt('Edit todo', todo.text);
+    if (newText === null) return; // user cancelled
+
+    const trimmed = newText.trim();
+    if (!trimmed) {
+        alert('Todo text cannot be empty');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ text: trimmed }),
+        });
+
+        if (response.ok) {
+            const updatedTodo = await response.json();
+            const index = todos.findIndex(t => t.id === id);
+            if (index !== -1) {
+                todos[index] = updatedTodo;
+                renderTodos();
+            }
+        } else {
+            alert('Failed to update todo');
+        }
+    } catch (error) {
+        console.error('Error editing todo:', error);
+        alert('Failed to update todo');
+    }
+} 
 
 // Update statistics
 function updateStats() {

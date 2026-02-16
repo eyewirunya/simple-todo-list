@@ -154,6 +154,41 @@ describe('Todo API Endpoints', () => {
       expect(response.status).toBe(404);
       expect(response.body).toHaveProperty('error', 'Todo not found');
     });
+
+    test('should update todo text when provided', async () => {
+      const createResponse = await request(app)
+        .post('/api/todos')
+        .send({ text: 'Old text' });
+
+      const todoId = createResponse.body.id;
+
+      const updateResponse = await request(app)
+        .put(`/api/todos/${todoId}`)
+        .send({ text: 'New text' });
+
+      expect(updateResponse.status).toBe(200);
+      expect(updateResponse.body).toHaveProperty('text', 'New text');
+
+      const getResponse = await request(app).get('/api/todos');
+      const found = getResponse.body.find(t => t.id === todoId);
+      expect(found).toBeDefined();
+      expect(found.text).toBe('New text');
+    });
+
+    test('should return 400 when updated text is empty', async () => {
+      const createResponse = await request(app)
+        .post('/api/todos')
+        .send({ text: 'Some text' });
+      
+      const todoId = createResponse.body.id;
+
+      const response = await request(app)
+        .put(`/api/todos/${todoId}`)
+        .send({ text: '   ' });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('error', 'Todo text is required');
+    });
   });
 
   describe('DELETE /api/todos/:id', () => {
